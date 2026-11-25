@@ -1,0 +1,43 @@
+这是一个用于P3/4/5/6指定的指令集的随机MIPS程序生成器，用于对拍测试。
+对，所以这只是一个数据生成器。我的ISE安在Linux虚拟机上，对拍的调用和检验程序本人完全不会QAQ
+
+==结构==
+基本组成：
+random_mips_generator.exe (源码: .cpp) - 随机MIPS源码生成器
+Mars4_5.jar - 就是原版MARS
+random_gen.bat - windows批处理脚本，半自动化调用生成器。理论上来说也是这个对拍数据生成工具的使用入口。
+random_dataset_gen.bat - windows批处理脚本，自动化生成数据集脚本。用于配合P5指导书中的analysis使用，会在对应的analysis文件夹中生成对应的数据集。
+
+生成文件：
+gen_mips_source.asm - 生成的MIPS源码文件
+gen_mips_source_simulate.asm - 和gen_mips_source.asm内容完全一致，只是为了适合在MARS中模拟，将add和sub换成了addu和subu，因为P3指令集中实际上add和sub就是addu和subu的功能。（否则会溢出，报错）
+gen_mips_program.hex - 对于random_gen.bat中的每一轮生成，在random_gen.bat使用MARS验证本轮生成的MIPS源码文件中没有死循环后，便将gen_mips_source.asm编译为hex文件，就是这个。
+mars_temp.log - 临时log文件，用于检验是否有死循环用的
+
+环境需求：
+已提交的可执行文件和批处理脚本是用于windows系统的。
+linux系统可尝试将.bat文件转写为.sh文件运行，.exe文件通过对.cpp源码重新编译运行。
+在运行的机器上，需要可运行Mars jar文件的java环境，且需添加至系统PATH中。（即命令行可直接调用）
+编译.cpp源码要求使用C++11及以上环境。
+
+==使用说明==
+
+**需要在random_gen.bat中手动修改verilog工程文件夹根目录路径至变量VERILOG_FOLDER中。**
+
+打开random_gen.bat就能开启半自动生成流程。
+random_mips_generator.exe可以在命令行里直接调用，没有参数，调用一次生成一次，固定输出至gen_mips_source.asm和gen_mips_source_simulate.asm两个文件中。
+对于源码，我尽力把可修改项放在了除了一些基本util之外的最顶端，应该能对程序的效果起到一定的调整。cpp源码没用windows.h所以理论上来说是全平台通用的。编译的时候务必-std=c++11
+
+==声明==
+random_mips_generator.cpp 100%本人手搓，除了特殊include的那几个cpp11的库的函数用法（以及string类相关函数的定义）本人确实查了资料，其它的确实都是100%手搓
+random_gen.bat 循环架构以及输出什么的基本是AI搓的，循环内的部分是本人和AI合作的
+random_dataset_gen.bat 完全AI生成
+思路什么的就是基本对拍思路 所以也没什么可抄的（
+
+==附言==
+总而言之确实不是很高技术力也不是很复杂（
+程序仅仅少覆盖了一条指令 - bne，因为bne在寄存器相等时才会不跳转，而我目前的跳转思路几乎都是往前跳转，就太容易生成死循环了，所以没办法啦...
+除此之外，为了尽力避免死循环的出现，jal和jr的样式是固定的：先触发jal，然后会跳到前方的一个随机标签，然后等到顺序执行到jr时跳回。这可能会显著降低对二者完备性的检验效果。同时这还要求我对31号寄存器进行非常严格的管控... 总而言之为了满足指令不得不削减随机性和覆盖率了
+生成没有死循环的正常程序的比例大概在80%~85%左右 本人尽力了QAQ
+此外，还有缺陷就是，lw和sw指令由于一定会调用rt，也就是32位寄存器的值，而很明显随机生成程序中除了$0之外任何的寄存器的值都没有任何限制范围，因而无法确保内存地址合法。在编写时其实考虑到了这点所以直接使用了mips中的扩展指令 lw/sw rt, offset 从而通过限制imm的生成范围保证其地址合法。经过MARS模拟它会扩展成 lw/sw rt, offset($0) ，所以事实就是这个工具无法测试真正的随机 lw/sw rt, offset($base)，或者说$base只可能是$0。这是一个严重的问题，但是没啥办法好像。 
+以及 这个 只能作为初步检验 ，严密性为0，通过了也不能说明什么，只是用来找错误灵感的 呃嗯 虽然思路就是运行越多大概错误积累的就会越来越离谱 但是确实说不准会出现错误被其它随机指令掩盖从而躲过检测的情况 嗯是这样的
