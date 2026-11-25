@@ -2,7 +2,7 @@
 chcp 65001 >nul
 
 rem verilog工程文件夹路径
-set VERILOG_FOLDER=D:\Verilog\projects\pipe-cpu-p6
+set VERILOG_FOLDER=.
 
 rem 生成循环次数
 set N=100

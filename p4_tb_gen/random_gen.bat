@@ -1,6 +1,9 @@
 @echo off
 chcp 65001 >nul
 
+rem verilog工程文件夹路径
+set VERILOG_FOLDER=.
+
 rem 生成循环次数
 set N=100
 rem 输出hex文件路径
@@ -52,14 +55,11 @@ for /l %%i in ( 1 , 1 , %N% ) do (
         ) else (
             echo.
             echo [ PASS ] 可用的MIPS源码！开始编译...
-            java -jar Mars4_5.jar nc a mc CompactTextAtZero dump .text HexText gen_mips_program.hex gen_mips_source.asm
-            
-            rem 增加logisim识别头 
-            rem 使用了powershell，若不支持可能需要切换方式。 
-            powershell -Command "$content = Get-Content '%HEX_FILE%'; @('v2.0 raw') + $content | Set-Content '%HEX_FILE%'"
+            java -jar Mars4_5.jar nc a mc CompactDataAtZero dump .text HexText %HEX_FILE% gen_mips_source.asm
 
+            copy /Y gen_mips_program.hex %VERILOG_FOLDER%\code.txt
 
-            rem 半自动方式：手动将gen_mips_program.hex导入到logisim中，并运行gen_mips_source_simulate.asm，检查MARS和logisim中GRF等寄存器是否一致（如果有必要也可以检查内存）。随后继续生成。 
+            rem 半自动方式：程序会自动将编译结果导入至verilog工程文件夹内，但需要手动重新执行ISim（以及把时间拉到10微秒左右），检查MARS和verilog中GRF等寄存器是否一致（如果有必要也可以检查内存）。随后继续生成。 
             pause
 
 
